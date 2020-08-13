@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_de_android/station.dart';
 import 'package:http/http.dart';
 import 'package:sqflite/sqflite.dart';
@@ -37,7 +38,11 @@ class StationRepository {
       dbPath + DB_NAME,
       version: 1,
       onCreate: (db, version) async {
-        await db.execute('CREATE TABLE checkin_stations(id VARCHAR(255) PRIMARY KEY');
+        try {
+          await db.execute('CREATE TABLE checkin_stations(id VARCHAR(255) PRIMARY KEY)');
+        } catch (e) {
+          debugPrint(e.toString());
+        }
       },
     );
 
