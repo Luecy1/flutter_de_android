@@ -15,36 +15,36 @@ class StationRepository {
         stationsJson.map((station) => Station.fromJson(station)).toList();
     return stations;
   }
-}
 
-void checkInStation(final String stationId) async {
-  final String dbPath = await getDatabasesPath();
-  final checkInStatus = await getCheckInStatus(stationId);
+  void saveCheckInStation(final String stationId) async {
+    final String dbPath = await getDatabasesPath();
+    final checkInStatus = await getCheckInStatus(stationId);
 
-  if (!checkInStatus) {
-    // first check in
-    final Database database = await openDatabase(dbPath + DB_NAME, version: 1);
-    database.rawInsert(
-      'INSERT INTO check_in_station(id) VALUES(?)',
-      [stationId],
-    );
+    if (!checkInStatus) {
+      // first check in
+      final Database database = await openDatabase(dbPath + DB_NAME, version: 1);
+      database.rawInsert(
+        'INSERT INTO checkin_stations(id) VALUES (?)',
+        [stationId],
+      );
+    }
   }
-}
 
-Future<bool> getCheckInStatus(final String stationId) async {
-  final String dbPath = await getDatabasesPath();
+  Future<bool> getCheckInStatus(final String stationId) async {
+    final String dbPath = await getDatabasesPath();
 
-  final Database database = await openDatabase(
-    dbPath + DB_NAME,
-    version: 1,
-    onCreate: (db, version) async {
-      await db.execute('CREATE TABLE check_in_stations (id VARCHAR(255) PRIMARY KEY)');
-    },
-  );
+    final Database database = await openDatabase(
+      dbPath + DB_NAME,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('CREATE TABLE checkin_stations(id VARCHAR(255) PRIMARY KEY');
+      },
+    );
 
-  final count = Sqflite.firstIntValue(
-    await database.rawQuery('SELECT COUNT(id) check_in_stations WHERE id = ? ', [stationId]),
-  );
+    final count = Sqflite.firstIntValue(
+      await database.rawQuery('SELECT COUNT(id) FROM checkin_stations WHERE id = ?', [stationId]),
+    );
 
-  return count > 0;
+    return count > 0;
+  }
 }

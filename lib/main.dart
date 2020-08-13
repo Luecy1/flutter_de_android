@@ -7,6 +7,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  static final stationRepository = StationRepository();
+
   @override
   Widget build(BuildContext context) {
     final stationRepository = StationRepository();
@@ -56,6 +58,9 @@ class MyApp extends StatelessWidget {
           return Divider(color: Colors.blue);
         }
 
+        final size = MediaQuery.of(context).size.width * 0.6;
+        final station = stationList[index ~/ 2];
+
         return ListTile(
           title: Text(
             stationList[index ~/ 2].name,
@@ -64,24 +69,63 @@ class MyApp extends StatelessWidget {
           onTap: () {
             showDialog(
               context: context,
-              builder: (context) => stationDialog(
-                MediaQuery.of(context).size.width * 0.6,
-                stationList[index ~/ 2].name,
-                stationList[index ~/ 2].image,
+              builder: (context) => FutureBuilder(
+                future: stationRepository.getCheckInStatus(station.id),
+                builder: (context, AsyncSnapshot<bool> snapshot) {
+                  final hasData = snapshot.hasData;
+                  if (!hasData) {
+                    return loadingWidget();
+                  }
+                  if (snapshot.data) {
+                    return stationDialog(context, size, station, true);
+                  }
+
+                  return stationDialog(context, size, station, false);
+                },
               ),
-            );
+            ).then((checkIn) {
+              if (checkIn != null && checkIn) {
+                stationRepository.saveCheckInStation(stationList[index ~/ 2].id);
+              }
+            });
           },
         );
       },
     );
   }
 
-  Widget stationDialog(final double size, final String name, final String url) {
-    return AlertDialog(
-      title: Text(
-        name,
+  Widget stationDialog(
+    final BuildContext context,
+    final double size,
+    final Station station,
+    final bool checkIn,
+  ) {
+    final List<Widget> actions = [];
+    final List<Widget> title = [
+      Text(
+        station.name,
         style: TextStyle(color: Colors.black, fontSize: 22.0),
-        textAlign: TextAlign.center,
+      )
+    ];
+
+    if (checkIn) {
+      title.add(Icon(
+        Icons.check_circle,
+        color: Colors.green,
+      ));
+    } else {
+      actions.add(FlatButton(
+        child: Text('チェックイン'),
+        onPressed: () {
+          Navigator.pop(context, true);
+        },
+      ));
+    }
+
+    return AlertDialog(
+      title: Row(
+        children: title,
+        mainAxisAlignment: MainAxisAlignment.center,
       ),
       content: Container(
         width: size,
@@ -90,10 +134,11 @@ class MyApp extends StatelessWidget {
           shape: BoxShape.circle,
           image: DecorationImage(
             fit: BoxFit.fill,
-            image: NetworkImage(url),
+            image: NetworkImage(station.image),
           ),
         ),
       ),
+      actions: actions,
     );
   }
 }
